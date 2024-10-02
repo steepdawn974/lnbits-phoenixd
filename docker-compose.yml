@@ -1,29 +1,55 @@
-version: '3.4'
-
 services:
   phoenixd:
-    build:
-      context: ./phoenixd
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    stop_signal: SIGKILL
+    platform: linux/amd64
+    image: ghcr.io/sethforprivacy/phoenixd:latest
+    container_name: phoenixd-1
+#    volumes:
+#      - ./phoenixd-data:/phoenix/.phoenix
+    environment:
+      - PHOENIX_DATADIR=/phoenix/.phoenix
+      - PHOENIX_SEED=${PHOENIX_SEED}
     ports:
       - "9740:9740"
     networks:
       - my_network
+    command: --agree-to-terms-of-service --http-bind-ip=0.0.0.0 --http-password=de3193b321bd530d19dcc497cc2ae7546b5f6da0dcec6db030943ffc62f3e99f
 
   lnbits:
     depends_on:
     - phoenixd
-    build:
-      context: ./lnbits
-      dockerfile: Dockerfile
+    - postgres
+    image: lnbits/lnbits
+    container_name: lnbits-1
     restart: unless-stopped
     stop_signal: SIGKILL
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5000:5000"
+    volumes:
+      - ./lnbits.env:/app/.env
+      - ./lnbits-data:/app/data
     networks:
       - my_network
+
+  postgres:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=lnbits
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=lnbits
+#    ports:
+#      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - my_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lnbits"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   my_network:
