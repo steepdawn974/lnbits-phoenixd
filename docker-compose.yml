@@ -8,22 +8,24 @@ services:
     environment:
       - PHOENIX_DATADIR=/phoenix/.phoenix
       - PHOENIX_SEED=${PHOENIX_SEED}
+      - PHOENIX_HTTP_PASSWORD=${PHOENIX_HTTP_PASSWORD}
     ports:
       - "9740:9740"
     networks:
       - my_network
-    command: --agree-to-terms-of-service --http-bind-ip=0.0.0.0 --http-password=de3193b321bd530d19dcc497cc2ae7546b5f6da0dcec6db030943ffc62f3e99f
+    command: --agree-to-terms-of-service --http-bind-ip=0.0.0.0 --http-password=${PHOENIX_HTTP_PASSWORD}
 
   lnbits:
     depends_on:
-    - phoenixd
-    - postgres
+      - phoenixd
+      - postgres
     image: lnbits/lnbits
     container_name: lnbits-1
     restart: unless-stopped
     stop_signal: SIGKILL
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PHOENIX_HTTP_PASSWORD=${PHOENIX_HTTP_PASSWORD}
     ports:
       - "5000:5000"
     volumes:
